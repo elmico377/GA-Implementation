@@ -6,9 +6,10 @@ class GASolver:
     # equation should be passed as a function
     # num_weights is fundamentally how many variables we need to consider
     # is_maximizing, boolean it's either True if maximizing or False if minimizing, by default maximizing
-    def __init__(self, equation, num_weights, is_maximizing = True):
+    def __init__(self, equation, num_weights, nonlincon = None, is_maximizing = True):
         self.equation = equation
         self.num_weights = num_weights
+        self.nonlincon = nonlincon
         self.is_maximizing = is_maximizing
     
     # Bounds should be a vector bounds(0) is the lb, bounds(1) is ub, used for initialization, does not limit later
@@ -37,7 +38,7 @@ class GASolver:
         prev_answer = 0
         while current_generation < max_num_generations:
             current_generation = current_generation + 1
-            fitness_values = GASolver.calculate_population_fitness(self.equation, current_population)
+            fitness_values = GASolver.calculate_population_fitness(self.equation, current_population, self.nonlincon, self.is_maximizing)
 
             extreme_value = GASolver.get_extreme_value(self.is_maximizing,current_generation,fitness_values)
 
@@ -50,7 +51,7 @@ class GASolver:
                     prev_answer = extreme_value
                     num_rep = 0
             if num_rep == rep_cutoff:
-                print("----- Early exit exceeded " + str(rep_cutoff) + " repetitions ------")
+                print("----- Computation Exited: Exceeded " + str(rep_cutoff) + " repetitions ------")
                 current_generation = current_generation - 1
                 break;
 
@@ -62,7 +63,7 @@ class GASolver:
             new_population = GASolver.consolidate_populations(mating_parents,offspring)
             current_population = new_population
         
-        final_fitness_values = GASolver.calculate_population_fitness(self.equation, current_population)
+        final_fitness_values = GASolver.calculate_population_fitness(self.equation, current_population, self.nonlincon, self.is_maximizing)
         ordered_indices = GASolver.order_items(final_fitness_values)
         
         optimum_solution = current_population[ordered_indices[0]]
@@ -117,7 +118,11 @@ class GASolver:
                     index_affected_gene = random.randint(0,len(current_offspring)-1)
                 previously_altered.append(index_affected_gene)
                 # Currently randomly adds in the order of -1 to 1, not good for big changes
-                current_offspring[index_affected_gene] = current_offspring[index_affected_gene]*(1+random.uniform(-0.1,0.1)) #considered just adding but too small
+                #considered just adding but too small, only multiplying will prevent switching signage, so use both
+                current_offspring[index_affected_gene] = current_offspring[index_affected_gene]*(1+random.uniform(-0.1,0.1))
+                # Add a modifier but only sometimes
+                if round(current_offspring[index_affected_gene] * 10 ** 6) == 0 and random.randint(0,1) ==  1:
+                    current_offspring[index_affected_gene] = current_offspring[index_affected_gene] + random.uniform(-0.01,0)
                 genes_altered = genes_altered + 1
             
         #print(offspring)
@@ -153,10 +158,27 @@ class GASolver:
         #print(offspring)
         return offspring
     
-    def calculate_population_fitness(fitness_function, population):
+    def calculate_population_fitness(fitness_function, population, nonlincon, is_maximizing):
         fitness_values = []
         for parent in population:
-            fitness_values.append(fitness_function(parent))
+            fitness_score = fitness_function(parent)
+            conditions_satisfied = True
+
+            # Iterate over non-linear conditions
+            if not nonlincon == None:
+                for condition in nonlincon:
+                    if condition(parent) > 0:
+                        conditions_satisfied = False
+            
+            if not conditions_satisfied:
+                # TODO adjust penalty to be dynamic or manually altered
+                penalty = 1000
+                if is_maximizing:
+                    fitness_score = fitness_score - penalty
+                else:
+                    fitness_score = fitness_score + penalty
+
+            fitness_values.append(fitness_score)
         return fitness_values
 
     # Return ordered list of indices (from index of largest to index of smallest)

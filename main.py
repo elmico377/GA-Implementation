@@ -10,6 +10,12 @@ def test_function_2(x):
 def test_function_3(x):
     return x[0] * x[1]
 
+def test_function_3_c1(x):
+    return x[0] + x[1] ** 2
+
+def test_function_3_c2(x):
+    return x[0] ** 2 + x[1] ** 2 - 9
+
 def ackley_function(x):
     a = 20
     b = 0.2
@@ -25,17 +31,17 @@ def beale_function(x):
 #solver.solve((-5,5),50,20)
 
 # Example 2: Converging Question
-#solver2 = GASolver(test_function_2,2, False)
+#solver2 = GASolver(test_function_2,2,None, False)
 #solver2.solve([-5,5],50,25)
 
 # Example 3: Converging Bounded Arora 3.9
-#solver3 = GASolver(test_function_3,3)
-#solver3.solve([0,5],10,5)
+solver3 = GASolver(test_function_3,2,[test_function_3_c1, test_function_3_c2],False)
+solver3.solve([-2,2],75,15,50)
 
 # Example 4: Ackley Function Orig 
-#solver_ackley = GASolver(ackley_function,2,False)
+#solver_ackley = GASolver(ackley_function,2, None, False)
 #solver_ackley.solve([-10, 10],50,15)
 
 # Example 5: Beale Function
-#solver_beale = GASolver(beale_function, 2, False)
+#solver_beale = GASolver(beale_function, 2, None, False)
 #solver_beale.solve([-10, 10], 75, 15, 50)
