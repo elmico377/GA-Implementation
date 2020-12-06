@@ -6,11 +6,12 @@ class GASolver:
     # equation should be passed as a function
     # num_weights is fundamentally how many variables we need to consider
     # is_maximizing, boolean it's either True if maximizing or False if minimizing, by default maximizing
-    def __init__(self, equation, num_weights, nonlincon = None, is_maximizing = True):
+    def __init__(self, equation, num_weights, nonlincon = None, is_maximizing = True,  is_verbose = True):
         self.equation = equation
         self.num_weights = num_weights
         self.nonlincon = nonlincon
         self.is_maximizing = is_maximizing
+        self.is_verbose = is_verbose
     
     # Bounds should be a vector bounds(0) is the lb, bounds(1) is ub, used for initialization, does not limit later
     # spp means solutions per population
@@ -40,7 +41,7 @@ class GASolver:
             current_generation = current_generation + 1
             fitness_values = GASolver.calculate_population_fitness(self.equation, current_population, self.nonlincon, self.is_maximizing)
 
-            extreme_value = GASolver.get_extreme_value(self.is_maximizing,current_generation,fitness_values)
+            extreme_value = GASolver.get_extreme_value(self.is_maximizing,current_generation,fitness_values, self.is_verbose)
 
             if current_generation == 0:
                 prev_answer = extreme_value 
@@ -76,13 +77,15 @@ class GASolver:
             print("Provided by solution: " + str(optimum_solution))
         return optimum_solution
 
-    def get_extreme_value(is_maximizing, current_generation, fitness_values):
+    def get_extreme_value(is_maximizing, current_generation, fitness_values, is_verbose):
         extreme_value = 0
         if is_maximizing:
-            print("Maximum Value in Generation " + str(current_generation - 1) + " : " + str(max(fitness_values)))
+            if is_verbose:
+                print("Maximum Value in Generation " + str(current_generation - 1) + " : " + str(max(fitness_values)))
             extreme_value = max(fitness_values)
         else:
-            print("Minimum Value in Generation " + str(current_generation - 1) + " : " + str(min(fitness_values)))
+            if is_verbose:
+                print("Minimum Value in Generation " + str(current_generation - 1) + " : " + str(min(fitness_values)))
             extreme_value = min(fitness_values)
         return extreme_value
 
